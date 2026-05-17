@@ -58,3 +58,17 @@ input::placeholder { color: var(--muted); }
   0%, 100% { filter: drop-shadow(0 0 6px var(--primary-glow)); }
   50% { filter: drop-shadow(0 0 16px rgba(0, 229, 176, 0.35)); }
 }
+@keyframes gp {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 176, 0.12); }
+  50% { box-shadow: 0 0 40px rgba(0, 229, 176, 0.22); }
+}
+@keyframes sc {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@keyframes tp {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+button { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
