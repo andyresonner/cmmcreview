@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/assess", label: "Readiness Check" },
   { href: "/directory", label: "Find a Partner" },
   { href: "/resources", label: "Resources" },
+  { href: "/get-listed", label: "Get Listed" },
 ];
 
 export default function Nav() {

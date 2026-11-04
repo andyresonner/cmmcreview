@@ -4,10 +4,22 @@ import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { C, f, QUIZ_QUESTIONS } from '../../lib/constants';
 import { Shield, Badge } from '../../lib/ui';
+import LeadModal from '../../components/LeadModal';
+import { FEATURED } from '../../lib/featured';
+
+// Pick 3 featured providers most relevant to a given score tier
+function matchedProviders(score) {
+  if (score >= 88) return FEATURED.slice(0, 3); // ready → show C3PAOs for formal assessment
+  if (score >= 55) return FEATURED.slice(1, 4); // gaps → mix of experienced C3PAOs/RPOs
+  return FEATURED.slice(3, 6); // critical → show providers known for remediation support
+}
 
 export default function AssessPage() {
-  const [step, setStep] = useState(0); // 0=intro, 1-8=questions, 9+=results
+  const [step, setStep]       = useState(0); // 0=intro, 1-8=questions, 9+=results
   const [answers, setAnswers] = useState({});
+  const [emailVal, setEmailVal] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [modal, setModal]     = useState(null);
 
   const handleAnswer = (qi, oi) => {
     setAnswers(prev => ({ ...prev, [qi]: oi }));
@@ -176,32 +188,89 @@ export default function AssessPage() {
                 })}
               </div>
 
-              {/* Lead capture CTA */}
+              {/* Email capture — sends lead to us */}
               <div style={{
-                padding: 28, borderRadius: 14,
+                padding: 24, borderRadius: 14,
                 background: `linear-gradient(135deg, ${C.accent}0c, ${C.primary}06)`,
                 border: `1px solid ${C.accent}25`, textAlign: "center",
               }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, fontFamily: f.m, letterSpacing: 1.5, marginBottom: 8 }}>
-                  GET YOUR FULL COMPLIANCE REPORT
+                {emailSent ? (
+                  <div>
+                    <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.white, fontFamily: f.h, marginBottom: 4 }}>You're on the list</div>
+                    <p style={{ fontSize: 13, color: C.off, lineHeight: 1.5 }}>We'll send your gap report and matched provider recommendations to <strong style={{ color: C.white }}>{emailVal}</strong>.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, fontFamily: f.m, letterSpacing: 1.5, marginBottom: 8 }}>
+                      GET YOUR FULL COMPLIANCE REPORT
+                    </div>
+                    <p style={{ fontSize: 13, color: C.off, marginBottom: 16, lineHeight: 1.6 }}>
+                      We'll email you a detailed gap analysis with remediation steps — and match you to the right compliance partner for your specific gaps.
+                    </p>
+                    <div style={{ display: "flex", gap: 8, maxWidth: 440, margin: "0 auto" }}>
+                      <input
+                        type="email"
+                        value={emailVal}
+                        onChange={e => setEmailVal(e.target.value)}
+                        placeholder="your.email@company.com"
+                        style={{
+                          flex: 1, padding: "12px 16px", borderRadius: 8, background: C.bg,
+                          border: `1px solid ${C.dim}`, color: C.white, fontSize: 13, fontFamily: f.b, outline: "none",
+                        }}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!emailVal) return;
+                          await fetch('/api/contact', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: emailVal, score, grade: grade.g, need: 'report', source: 'assess' }),
+                          });
+                          setEmailSent(true);
+                        }}
+                        style={{
+                          padding: "12px 22px", borderRadius: 8, border: "none", cursor: "pointer",
+                          background: C.accent, color: C.white, fontSize: 13, fontWeight: 700, fontFamily: f.h,
+                          whiteSpace: "nowrap",
+                        }}>Get Report →</button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Matched providers */}
+              <div style={{ marginTop: 28 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.off, fontFamily: f.m, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+                  Recommended Partners for Your Gap Profile
                 </div>
-                <p style={{ fontSize: 13, color: C.off, marginBottom: 16, lineHeight: 1.6 }}>
-                  Download a detailed gap analysis with specific remediation steps for each control area — and get matched to verified CMMC partners who specialize in your gaps.
-                </p>
-                <div style={{ display: "flex", gap: 8, maxWidth: 440, margin: "0 auto" }}>
-                  <input type="email" placeholder="your.email@company.com" style={{
-                    flex: 1, padding: "12px 16px", borderRadius: 8, background: C.bg,
-                    border: `1px solid ${C.dim}`, color: C.white, fontSize: 13, fontFamily: f.b, outline: "none",
-                  }} />
-                  <button style={{
-                    padding: "12px 22px", borderRadius: 8, border: "none", cursor: "pointer",
-                    background: C.accent, color: C.white, fontSize: 13, fontWeight: 700, fontFamily: f.h,
-                    whiteSpace: "nowrap",
-                  }}>Get Report →</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {matchedProviders(score).map((p) => (
+                    <div key={p.storeId} style={{
+                      padding: "16px 18px", borderRadius: 10, background: C.bgCard,
+                      border: `1px solid ${C.purple}20`, display: "flex", alignItems: "center", gap: 14,
+                    }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 9, flexShrink: 0,
+                        background: C.purple + "14", border: `1px solid ${C.purple}28`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontFamily: f.m, fontSize: 9, fontWeight: 700, color: C.purple,
+                      }}>{p.type}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: f.h, fontSize: 14, fontWeight: 700, color: C.white }}>{p.name}</div>
+                        <div style={{ fontSize: 12, color: C.muted }}>{p.city}, {p.state} · {p.highlight}</div>
+                      </div>
+                      <button onClick={() => setModal(p)} style={{
+                        padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+                        background: C.purple, color: C.white, fontSize: 12, fontWeight: 700, fontFamily: f.h,
+                        flexShrink: 0,
+                      }}>Request Info</button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 20 }}>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 24 }}>
                 <button onClick={reset} style={{
                   padding: "8px 18px", borderRadius: 8, background: "transparent",
                   border: `1px solid ${C.dim}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: f.m,
@@ -210,8 +279,9 @@ export default function AssessPage() {
                   padding: "8px 18px", borderRadius: 8, background: C.blue + "14",
                   border: `1px solid ${C.blue}30`, color: C.blue, fontSize: 12,
                   fontWeight: 600, fontFamily: f.h, textDecoration: "none", display: "inline-block",
-                }}>Find a CMMC Partner →</Link>
+                }}>Browse All Partners →</Link>
               </div>
+              {modal && <LeadModal provider={modal} onClose={() => setModal(null)} />}
             </div>
           )}
         </div>

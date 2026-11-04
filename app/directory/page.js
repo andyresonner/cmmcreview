@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { C, f } from '../../lib/constants';
 import { Badge } from '../../lib/ui';
+import LeadModal from '../../components/LeadModal';
+import { FEATURED } from '../../lib/featured';
 
 const ORG_TYPES  = ['C3PAO', 'RPO', 'LTP', 'LPP'];
 const PRO_TYPES  = ['RP', 'CCP', 'CCA', 'LCCA', 'RPA', 'PI'];
@@ -28,131 +30,177 @@ const TYPE_COLOR = {
 
 const PAGE_SIZE = 50;
 
-function ProviderCard({ p }) {
+function FeaturedCard({ p, onInfo }) {
+  const [hover, setHover] = useState(false);
+  const color = C.purple;
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding: '20px 22px', borderRadius: 12, flex: '1 1 300px',
+        background: hover ? C.bgCardHover : C.bgCard,
+        border: `1px solid ${hover ? color + '40' : color + '20'}`,
+        transition: 'all .2s', position: 'relative', overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 10, right: 12, fontSize: 9, fontFamily: f.m,
+        fontWeight: 700, color: color, padding: '3px 8px', borderRadius: 4,
+        background: color + '12', border: `1px solid ${color}22`,
+      }}>FEATURED</div>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+          background: color + '14', border: `1px solid ${color}28`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: f.m, fontSize: 10, fontWeight: 700, color,
+        }}>{p.type}</div>
+        <div>
+          <div style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 2 }}>{p.name}</div>
+          <div style={{ fontSize: 11, color: C.muted }}>{p.city}, {p.state}</div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: C.off, lineHeight: 1.6, marginBottom: 14, minHeight: 54 }}>{p.tagline}</p>
+
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={() => onInfo(p)}
+          style={{
+            flex: 1, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: color, color: C.white, fontSize: 12, fontWeight: 700, fontFamily: f.h,
+          }}>Request Info</button>
+        <Link href={`/directory/${p.storeId}`} style={{
+          flex: 1, padding: '9px', borderRadius: 8, textDecoration: 'none', textAlign: 'center',
+          background: color + '14', color, fontSize: 12, fontWeight: 700, fontFamily: f.h,
+        }}>View Profile →</Link>
+      </div>
+    </div>
+  );
+}
+
+function ProviderCard({ p, onInfo }) {
+  const [hover, setHover] = useState(false);
   const color = TYPE_COLOR[p.type] || C.primary;
   const location = [p.city, p.state].filter(Boolean).join(', ');
   const services = (p.cmmcServices || []).slice(0, 3);
 
   return (
-    <Link href={`/directory/${p.storeId}`} style={{ textDecoration: 'none', display: 'block' }}>
+    <div style={{
+      padding: '18px 20px', borderRadius: 12, background: hover ? C.bgCardHover : C.bgCard,
+      border: `1px solid ${hover ? color + '35' : C.border}`,
+      display: 'flex', alignItems: 'center', gap: 16, transition: 'all .18s',
+    }}
+    onMouseEnter={() => setHover(true)}
+    onMouseLeave={() => setHover(false)}
+    >
       <div style={{
-        padding: '20px 22px', borderRadius: 12, background: C.bgCard,
-        border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center',
-        gap: 18, transition: 'all .2s', cursor: 'pointer',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = color + '40'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
-      >
-        <div style={{
-          width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-          background: color + '14', border: `1px solid ${color}28`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: f.m, fontSize: 9, fontWeight: 700, color,
-        }}>{p.type}</div>
+        width: 46, height: 46, borderRadius: 11, flexShrink: 0,
+        background: color + '14', border: `1px solid ${color}28`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: f.m, fontSize: 9, fontWeight: 700, color,
+      }}>{p.type}</div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {p.name}
-          </div>
-          <div style={{ fontSize: 12, color: C.muted, marginBottom: services.length ? 4 : 0 }}>
-            {TYPE_LABEL[p.type]}{location ? ` · ${location}` : ''}
-            {p.country && p.country !== 'USA' ? ` · ${p.country}` : ''}
-          </div>
-          {services.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {services.map((s, i) => (
-                <span key={i} style={{
-                  fontSize: 10, padding: '2px 7px', borderRadius: 4,
-                  background: color + '10', color, fontFamily: f.m,
-                }}>{s}</span>
-              ))}
-            </div>
-          )}
+      <Link href={`/directory/${p.storeId}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
+        <div style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {p.name}
         </div>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: services.length ? 5 : 0 }}>
+          {TYPE_LABEL[p.type]}{location ? ` · ${location}` : ''}
+        </div>
+        {services.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {services.map((s, i) => (
+              <span key={i} style={{
+                fontSize: 10, padding: '2px 7px', borderRadius: 4,
+                background: color + '10', color, fontFamily: f.m,
+              }}>{s}</span>
+            ))}
+          </div>
+        )}
+      </Link>
 
-        <div style={{
-          flexShrink: 0, padding: '9px 18px', borderRadius: 8,
-          background: color + '14', color, fontSize: 12, fontWeight: 700,
-          fontFamily: f.h, whiteSpace: 'nowrap',
-        }}>
-          View Profile →
-        </div>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={() => onInfo(p)}
+          style={{
+            padding: '8px 14px', borderRadius: 8, border: `1px solid ${color}30`, cursor: 'pointer',
+            background: 'transparent', color, fontSize: 12, fontWeight: 700, fontFamily: f.h,
+            whiteSpace: 'nowrap', transition: 'all .15s',
+          }}
+        >Request Info</button>
+        <Link href={`/directory/${p.storeId}`} style={{
+          padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+          background: color + '14', color, fontSize: 12, fontWeight: 700, fontFamily: f.h,
+          whiteSpace: 'nowrap', textDecoration: 'none', display: 'inline-block',
+        }}>Profile →</Link>
       </div>
-    </Link>
+    </div>
   );
 }
 
 function SelectFilter({ value, onChange, options, label }) {
   return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      style={{
-        padding: '10px 14px', borderRadius: 10, background: C.bgCard,
-        border: `1px solid ${C.border}`, color: value === 'all' ? C.muted : C.white,
-        fontSize: 13, fontFamily: f.b, cursor: 'pointer', outline: 'none',
-      }}
-    >
+    <select value={value} onChange={e => onChange(e.target.value)} style={{
+      padding: '10px 14px', borderRadius: 10, background: C.bgCard,
+      border: `1px solid ${C.border}`, color: value === 'all' ? C.muted : C.white,
+      fontSize: 13, fontFamily: f.b, cursor: 'pointer', outline: 'none',
+    }}>
       <option value="all">{label}</option>
-      {options.map(o => (
-        <option key={o.v} value={o.v}>{o.l}</option>
-      ))}
+      {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
     </select>
   );
 }
 
 export default function DirectoryPage() {
-  const [providers, setProviders] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [section, setSection]     = useState('orgs');
-  const [search, setSearch]       = useState('');
+  const [providers, setProviders]     = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [section, setSection]         = useState('orgs');
+  const [search, setSearch]           = useState('');
   const [typeFilter, setTypeFilter]   = useState('all');
   const [stateFilter, setStateFilter] = useState('all');
-  const [page, setPage]           = useState(1);
+  const [page, setPage]               = useState(1);
+  const [modal, setModal]             = useState(null); // provider object or null
 
   useEffect(() => {
-    fetch('/providers.json')
-      .then(r => r.json())
-      .then(data => { setProviders(data); setLoading(false); });
+    fetch('/providers.json').then(r => r.json()).then(data => { setProviders(data); setLoading(false); });
   }, []);
 
   const sectionTypes = section === 'orgs' ? ORG_TYPES : PRO_TYPES;
-
   useEffect(() => { setPage(1); },           [section, search, typeFilter, stateFilter]);
   useEffect(() => { setTypeFilter('all'); }, [section]);
 
-  const sectionProviders = useMemo(
-    () => providers.filter(p => sectionTypes.includes(p.type)),
-    [providers, sectionTypes]
-  );
+  const sectionProviders = useMemo(() => providers.filter(p => sectionTypes.includes(p.type)), [providers, sectionTypes]);
 
   const states = useMemo(() => {
     const s = new Set(sectionProviders.map(p => p.state).filter(Boolean));
     return Array.from(s).sort();
   }, [sectionProviders]);
 
-  const filtered = useMemo(() => {
-    return sectionProviders.filter(p => {
-      if (typeFilter  !== 'all' && p.type  !== typeFilter)  return false;
-      if (stateFilter !== 'all' && p.state !== stateFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (!p.name.toLowerCase().includes(q) &&
-            !(p.city  || '').toLowerCase().includes(q) &&
-            !(p.state || '').toLowerCase().includes(q)) return false;
-      }
-      return true;
-    });
-  }, [sectionProviders, typeFilter, stateFilter, search]);
+  const filtered = useMemo(() => sectionProviders.filter(p => {
+    if (typeFilter  !== 'all' && p.type  !== typeFilter)  return false;
+    if (stateFilter !== 'all' && p.state !== stateFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!p.name.toLowerCase().includes(q) &&
+          !(p.city  || '').toLowerCase().includes(q) &&
+          !(p.state || '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }), [sectionProviders, typeFilter, stateFilter, search]);
 
   const visible = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = visible.length < filtered.length;
 
-  const typeOptions = sectionTypes.map(t => ({ v: t, l: `${t} — ${TYPE_LABEL[t]}` }));
-  const stateOptions = states.map(s => ({ v: s, l: s }));
-
   const orgCount = useMemo(() => providers.filter(p => ORG_TYPES.includes(p.type)).length, [providers]);
   const proCount = useMemo(() => providers.filter(p => PRO_TYPES.includes(p.type)).length, [providers]);
+
+  const typeOptions  = sectionTypes.map(t => ({ v: t, l: `${t} — ${TYPE_LABEL[t]}` }));
+  const stateOptions = states.map(s => ({ v: s, l: s }));
+
+  const noFilters = search === '' && typeFilter === 'all' && stateFilter === 'all';
 
   return (
     <div style={{ paddingTop: 56 }}>
@@ -164,29 +212,25 @@ export default function DirectoryPage() {
             CMMC Marketplace
           </h1>
           <p style={{ fontSize: 15, color: C.off, maxWidth: 600, lineHeight: 1.7 }}>
-            All {loading ? '…' : providers.length.toLocaleString()} organizations and professionals from the official Cyber AB Marketplace.
+            All {loading ? '…' : providers.length.toLocaleString()} organizations and practitioners from the official Cyber AB Marketplace.
+            Phase 2 enforcement is live.
           </p>
 
-          {/* Section tabs */}
           {!loading && (
             <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
               {[
                 { v: 'orgs', l: 'Organizations', count: orgCount, color: C.primary },
                 { v: 'pros', l: 'Professionals',  count: proCount, color: C.blue },
               ].map(tab => (
-                <button
-                  key={tab.v}
-                  onClick={() => setSection(tab.v)}
-                  style={{
-                    padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    background: section === tab.v ? tab.color + '18' : C.bgCard,
-                    color:      section === tab.v ? tab.color : C.muted,
-                    fontFamily: f.h, fontSize: 13, fontWeight: 700,
-                    borderWidth: 1, borderStyle: 'solid',
-                    borderColor: section === tab.v ? tab.color + '40' : C.border,
-                    transition: 'all .15s',
-                  }}
-                >
+                <button key={tab.v} onClick={() => setSection(tab.v)} style={{
+                  padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: section === tab.v ? tab.color + '18' : C.bgCard,
+                  color: section === tab.v ? tab.color : C.muted,
+                  fontFamily: f.h, fontSize: 13, fontWeight: 700,
+                  borderWidth: 1, borderStyle: 'solid',
+                  borderColor: section === tab.v ? tab.color + '40' : C.border,
+                  transition: 'all .15s',
+                }}>
                   {tab.l} <span style={{ opacity: .65 }}>({tab.count.toLocaleString()})</span>
                 </button>
               ))}
@@ -198,44 +242,56 @@ export default function DirectoryPage() {
       <section style={{ padding: '24px 32px 64px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
 
+          {/* Featured — only on orgs, no filters */}
+          {section === 'orgs' && noFilters && !loading && (
+            <div style={{ marginBottom: 36 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <h2 style={{ fontFamily: f.h, fontSize: 16, fontWeight: 700, color: C.white, margin: 0 }}>
+                  Featured C3PAOs
+                </h2>
+                <Link href="/get-listed" style={{ fontSize: 12, color: C.muted, textDecoration: 'none', fontFamily: f.m }}>
+                  Get featured →
+                </Link>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {FEATURED.map(p => <FeaturedCard key={p.storeId} p={p} onInfo={setModal} />)}
+              </div>
+              <div style={{ height: 1, background: C.border, margin: '28px 0 4px' }} />
+            </div>
+          )}
+
           {/* Filters */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{
               flex: 1, minWidth: 260, display: 'flex', alignItems: 'center', gap: 10,
               padding: '0 16px', borderRadius: 10, background: C.bgCard, border: `1px solid ${C.border}`,
             }}>
               <span style={{ fontSize: 15, color: C.muted }}>🔍</span>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+              <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name, city, or state…"
-                style={{ flex: 1, padding: '12px 0', background: 'transparent', border: 'none', outline: 'none', color: C.white, fontSize: 13, fontFamily: f.b }}
-              />
+                style={{ flex: 1, padding: '12px 0', background: 'transparent', border: 'none', outline: 'none', color: C.white, fontSize: 13, fontFamily: f.b }} />
               {search && (
                 <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, padding: 0 }}>✕</button>
               )}
             </div>
-            <SelectFilter value={typeFilter}  onChange={setTypeFilter}  options={typeOptions}  label="All Types"   />
-            <SelectFilter value={stateFilter} onChange={setStateFilter} options={stateOptions} label="All States"  />
+            <SelectFilter value={typeFilter}  onChange={setTypeFilter}  options={typeOptions}  label="All Types"  />
+            <SelectFilter value={stateFilter} onChange={setStateFilter} options={stateOptions} label="All States" />
           </div>
 
           {/* Count */}
           {!loading && (
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 14, fontFamily: f.m }}>
               {filtered.length.toLocaleString()} result{filtered.length !== 1 ? 's' : ''}
-              {(search || typeFilter !== 'all' || stateFilter !== 'all')
-                ? ` (filtered from ${sectionProviders.length.toLocaleString()})` : ''}
+              {!noFilters ? ` (filtered from ${sectionProviders.length.toLocaleString()})` : ''}
             </div>
           )}
 
           {/* Cards */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '80px 0', color: C.muted, fontSize: 14 }}>
-              Loading {providers.length > 0 ? providers.length.toLocaleString() : ''} providers…
-            </div>
+            <div style={{ textAlign: 'center', padding: '80px 0', color: C.muted, fontSize: 14 }}>Loading providers…</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {visible.map(p => <ProviderCard key={p.storeId} p={p} />)}
+              {visible.map(p => <ProviderCard key={p.storeId} p={p} onInfo={setModal} />)}
               {visible.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '60px 0', color: C.muted, fontSize: 14 }}>
                   No results match your filters.
@@ -244,42 +300,40 @@ export default function DirectoryPage() {
             </div>
           )}
 
-          {/* Load more */}
           {hasMore && !loading && (
             <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                style={{
-                  padding: '12px 32px', borderRadius: 10, border: `1px solid ${C.border}`,
-                  background: C.bgCard, color: C.off, fontSize: 13, fontWeight: 700,
-                  fontFamily: f.h, cursor: 'pointer',
-                }}
-              >
+              <button onClick={() => setPage(p => p + 1)} style={{
+                padding: '12px 32px', borderRadius: 10, border: `1px solid ${C.border}`,
+                background: C.bgCard, color: C.off, fontSize: 13, fontWeight: 700,
+                fontFamily: f.h, cursor: 'pointer',
+              }}>
                 Load more ({filtered.length - visible.length} remaining)
               </button>
             </div>
           )}
 
-          {/* Partner signup CTA */}
+          {/* Provider CTA */}
           {!loading && (
             <div style={{
-              marginTop: 40, padding: 28, borderRadius: 14, textAlign: 'center',
+              marginTop: 40, padding: '28px 32px', borderRadius: 14, textAlign: 'center',
               background: C.bgCard, border: `1px dashed ${C.blue}30`,
             }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.white, fontFamily: f.h, marginBottom: 6 }}>
-                Are you an MSP, C3PAO, or RPO?
+                Are you a C3PAO, RPO, or compliance professional?
               </div>
-              <p style={{ fontSize: 13, color: C.muted, marginBottom: 14 }}>
-                Get listed in front of defense contractors actively seeking CMMC compliance help.
+              <p style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
+                Get featured listing, receive verified leads, and reach contractors at their highest-intent moment.
               </p>
-              <button style={{
-                padding: '10px 24px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              <Link href="/get-listed" style={{
+                display: 'inline-block', padding: '11px 28px', borderRadius: 8, textDecoration: 'none',
                 background: C.blue, color: C.white, fontSize: 13, fontWeight: 700, fontFamily: f.h,
-              }}>Apply for a Listing →</button>
+              }}>View Partner Program →</Link>
             </div>
           )}
         </div>
       </section>
+
+      {modal && <LeadModal provider={modal} onClose={() => setModal(null)} />}
     </div>
   );
 }

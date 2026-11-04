@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
-import Link from 'next/link';
 import { C, f } from '../../../lib/constants';
 import { Badge } from '../../../lib/ui';
+import ProfileClient from './ProfileClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +26,7 @@ const TYPE_COLOR = {
 };
 
 function getProvider(id) {
-  const filePath = path.join(process.cwd(), 'public', 'providers.json');
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  const data = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public', 'providers.json'), 'utf-8'));
   return data.find(p => String(p.storeId) === String(id)) || null;
 }
 
@@ -36,7 +35,13 @@ function InfoRow({ label, value }) {
   return (
     <div style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
       <span style={{ width: 160, flexShrink: 0, fontSize: 12, color: C.muted, fontFamily: f.m, paddingTop: 1 }}>{label}</span>
-      <span style={{ fontSize: 13, color: C.off, lineHeight: 1.5, wordBreak: 'break-word' }}>{value}</span>
+      <span style={{ fontSize: 13, color: C.off, lineHeight: 1.5, wordBreak: 'break-word' }}>
+        {label === 'Website'
+          ? <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" style={{ color: C.blue, textDecoration: 'none' }}>{value} ↗</a>
+          : label === 'Email'
+          ? <a href={`mailto:${value}`} style={{ color: C.blue, textDecoration: 'none' }}>{value}</a>
+          : value}
+      </span>
     </div>
   );
 }
@@ -54,21 +59,21 @@ export default function ProviderPage({ params }) {
     <div style={{ paddingTop: 56, minHeight: '100vh', background: C.bg }}>
       {/* Header */}
       <section style={{ padding: '48px 32px 32px', background: C.bgMid, borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          <Link href="/directory" style={{ fontSize: 12, color: C.muted, textDecoration: 'none', fontFamily: f.m, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 24 }}>
+        <div style={{ maxWidth: 920, margin: '0 auto' }}>
+          <a href="/directory" style={{ fontSize: 12, color: C.muted, textDecoration: 'none', fontFamily: f.m, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 24 }}>
             ← Back to Directory
-          </Link>
+          </a>
 
-          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{
-              width: 64, height: 64, borderRadius: 14, flexShrink: 0,
+              width: 72, height: 72, borderRadius: 16, flexShrink: 0,
               background: color + '14', border: `1px solid ${color}28`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: f.m, fontSize: 11, fontWeight: 700, color,
             }}>{p.type}</div>
 
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontFamily: f.h, fontSize: 30, fontWeight: 900, color: C.white, margin: '0 0 8px', letterSpacing: -0.5 }}>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <h1 style={{ fontFamily: f.h, fontSize: 28, fontWeight: 900, color: C.white, margin: '0 0 10px', letterSpacing: -0.5 }}>
                 {p.name}
               </h1>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -77,20 +82,23 @@ export default function ProviderPage({ params }) {
                 {location && <span style={{ fontSize: 13, color: C.muted }}>· {location}</span>}
               </div>
             </div>
+
+            {/* CTA — client component handles modal */}
+            <ProfileClient provider={p} color={color} />
           </div>
         </div>
       </section>
 
       {/* Body */}
       <section style={{ padding: '32px 32px 80px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 28 }}>
+        <div style={{ maxWidth: 920, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 32 }}>
 
-          {/* Left: details */}
+          {/* Left */}
           <div>
             {p.description && (
               <div style={{ marginBottom: 28 }}>
                 <h2 style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 10 }}>About</h2>
-                <p style={{ fontSize: 13, color: C.off, lineHeight: 1.8 }}>{p.description}</p>
+                <p style={{ fontSize: 13, color: C.off, lineHeight: 1.85 }}>{p.description}</p>
               </div>
             )}
 
@@ -111,7 +119,7 @@ export default function ProviderPage({ params }) {
 
             {certs.length > 0 && (
               <div style={{ marginBottom: 28 }}>
-                <h2 style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 12 }}>Certifications</h2>
+                <h2 style={{ fontFamily: f.h, fontSize: 15, fontWeight: 700, color: C.white, marginBottom: 12 }}>Certifications & Memberships</h2>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {certs.map((c, i) => (
                     <span key={i} style={{
@@ -124,51 +132,28 @@ export default function ProviderPage({ params }) {
               </div>
             )}
 
-            {/* Info table */}
             <div style={{ borderTop: `1px solid ${C.border}` }}>
-              <InfoRow label="Website"     value={p.website} />
-              <InfoRow label="Phone"       value={p.phone} />
-              <InfoRow label="Email"       value={p.email} />
-              <InfoRow label="Location"    value={location} />
-              <InfoRow label="Year Founded" value={p.yearFounded} />
-              <InfoRow label="Ownership"   value={p.ownership} />
-              <InfoRow label="NAICS Code"  value={p.naicsCode} />
+              <InfoRow label="Website"       value={p.website} />
+              <InfoRow label="Phone"         value={p.phone} />
+              <InfoRow label="Email"         value={p.email} />
+              <InfoRow label="Location"      value={location} />
+              <InfoRow label="Year Founded"  value={p.yearFounded} />
+              <InfoRow label="Ownership"     value={p.ownership} />
+              <InfoRow label="NAICS Code"    value={p.naicsCode} />
               <InfoRow label="States Served" value={p.usStatesSupported} />
               <InfoRow label="Remote / Global" value={p.remoteGlobally} />
             </div>
           </div>
 
-          {/* Right: sidebar */}
+          {/* Right sidebar */}
           <div>
-            <div style={{ padding: 20, borderRadius: 12, background: C.bgCard, border: `1px solid ${C.border}`, marginBottom: 14 }}>
-              <div style={{ fontSize: 12, color: C.muted, fontFamily: f.m, marginBottom: 12 }}>Contact</div>
-              {p.website && (
-                <a href={p.website.startsWith('http') ? p.website : `https://${p.website}`}
-                   target="_blank" rel="noopener noreferrer"
-                   style={{
-                     display: 'block', width: '100%', padding: '11px 0', borderRadius: 8,
-                     background: color, color: '#000', fontSize: 13, fontWeight: 700,
-                     fontFamily: f.h, textAlign: 'center', textDecoration: 'none', marginBottom: 8,
-                   }}>
-                  Visit Website ↗
-                </a>
-              )}
-              {p.email && (
-                <a href={`mailto:${p.email}`}
-                   style={{
-                     display: 'block', width: '100%', padding: '11px 0', borderRadius: 8,
-                     background: color + '14', color, fontSize: 13, fontWeight: 700,
-                     fontFamily: f.h, textAlign: 'center', textDecoration: 'none',
-                   }}>
-                  Send Email
-                </a>
-              )}
-            </div>
+            {/* Sidebar contact — client component handles modal */}
+            <ProfileClient provider={p} color={color} sidebar />
 
             {p.profileUrl && (
               <a href={p.profileUrl} target="_blank" rel="noopener noreferrer"
                  style={{
-                   display: 'block', padding: '12px 16px', borderRadius: 10,
+                   display: 'block', marginTop: 10, padding: '12px 16px', borderRadius: 10,
                    background: C.bgCard, border: `1px solid ${C.border}`,
                    fontSize: 12, color: C.muted, textDecoration: 'none',
                    fontFamily: f.m, textAlign: 'center',
@@ -177,13 +162,25 @@ export default function ProviderPage({ params }) {
               </a>
             )}
 
-            <div style={{ marginTop: 14, padding: 16, borderRadius: 10, background: C.bgCard, border: `1px solid ${C.border}` }}>
+            <div style={{ marginTop: 10, padding: 16, borderRadius: 10, background: C.bgCard, border: `1px solid ${C.border}` }}>
               <div style={{ fontSize: 11, color: C.muted, fontFamily: f.m, marginBottom: 6 }}>Provider ID</div>
               <div style={{ fontSize: 13, color: C.off, fontFamily: f.m }}>{p.storeId}</div>
               <div style={{ fontSize: 11, color: C.muted, fontFamily: f.m, marginTop: 10, marginBottom: 6 }}>Tier 3 Eligible</div>
               <div style={{ fontSize: 13, color: p.hasTier3 ? C.primary : C.muted, fontFamily: f.m }}>
                 {p.hasTier3 ? '✓ Yes' : 'No'}
               </div>
+            </div>
+
+            <div style={{ marginTop: 10, padding: 16, borderRadius: 10, background: C.primary + '06', border: `1px solid ${C.primary}18` }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.white, fontFamily: f.h, marginBottom: 4 }}>Are you this provider?</div>
+              <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: 12 }}>
+                Claim this profile to receive leads, add your logo, and get featured placement.
+              </p>
+              <a href="/get-listed" style={{
+                display: 'block', padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: C.primary + '14', color: C.primary, fontSize: 12, fontWeight: 700,
+                fontFamily: f.h, textAlign: 'center', textDecoration: 'none',
+              }}>Get Listed →</a>
             </div>
           </div>
         </div>
